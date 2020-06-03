@@ -1,14 +1,14 @@
 import React, { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useHistory } from 'react-router-dom'
 import { FiArrowLeft } from 'react-icons/fi'
 //import {LeafletMouseEvent} from 'leaflet'
-import { 
-    Map, 
-    TileLayer, 
-    Marker, 
+import {
+    Map,
+    TileLayer,
+    Marker,
     Popup,
 
- } from 'react-leaflet'
+} from 'react-leaflet'
 import axios from 'axios'
 
 import api from '../../services/api'
@@ -19,17 +19,25 @@ import logo from '../../assets/logo.svg'
 
 const CreatePoint = () => {
     const [items, setItems] = useState([])
+    const [selectedItems, setSelectedItems] = useState([])
     const [ufs, setUfs] = useState([])
     const [cities, setCities] = useState([])
     const [selectedUf, setSelectedUf] = useState('0')
     const [selectedCity, setSelectedCity] = useState('0')
-    const [initialPosition, setInitialPosition] = useState([0,0])
+    const [initialPosition, setInitialPosition] = useState([0, 0])
     const [selectedPosition, setSelectedPosition] = useState()
+    const [formData, setFormData] = useState({
+        name: '',
+        email: '',
+        whatsapp: ''
+    })
+
+    const history = useHistory()
 
     useEffect(() => {
         navigator.geolocation.getCurrentPosition(position => {
             console.log(position)
-            const {latitude, longitude} = position.coords
+            const { latitude, longitude } = position.coords
             setInitialPosition([latitude, longitude])
         })
     }, [])
@@ -62,6 +70,14 @@ const CreatePoint = () => {
 
     }, [selectedUf])
 
+    const onInputChangeHandler = (event) => {
+        setFormData({
+            ...formData,
+            [event.target.name]: event.target.value
+
+        })
+    }
+
     const onSelectUFHandler = (event) => {
         const uf = event.target.value
         console.log(uf)
@@ -76,8 +92,49 @@ const CreatePoint = () => {
 
     const onClickMapHandler = (event) => {
         console.log(event.latlng)
-        setSelectedPosition([event.latlng.lat,event.latlng.lng ])
+        setSelectedPosition([event.latlng.lat, event.latlng.lng])
     }
+
+    const onSelectItemsHandler = (itemId) => {
+        const alreadySelected = selectedItems.findIndex(item => item === itemId)
+
+        if (alreadySelected >= 0) {
+            const filteredItems = selectedItems.filter(item => item !== itemId)
+
+            setSelectedItems(filteredItems)
+        } else {
+            setSelectedItems([...selectedItems, itemId])
+        }
+
+    }
+
+   async function onSubmitHandler(event){
+        event.preventDefault()
+        console.log(event.target)
+        const {name, email,whatsapp, } = formData
+        const uf = selectedUf
+        const city = selectedCity
+        const [latitude, longitude] = selectedPosition
+        const items = selectedItems
+
+        const data = {
+            name,
+            email,
+            whatsapp,
+            uf,
+            city,
+            latitude,
+            longitude,
+            items
+        }
+
+        await api.post('points', data)
+
+        alert('Ponto de coleta salvo com sucesso!')
+
+        history.push('/')
+    }
+
     return (
         <div id='page-create-point'>
             <header>
@@ -86,7 +143,7 @@ const CreatePoint = () => {
                     <FiArrowLeft /> Voltar para home
                 </Link>
             </header>
-            <form>
+            <form onSubmit={onSubmitHandler}>
                 <h1>Cadastro do ponto de coleta</h1>
 
                 <fieldset>
@@ -97,6 +154,7 @@ const CreatePoint = () => {
                             type="text"
                             name="name"
                             id="name"
+                            onChange={onInputChangeHandler}
                         />
                     </div>
                     <div className="field-group">
@@ -106,6 +164,7 @@ const CreatePoint = () => {
                                 type="email"
                                 name="email"
                                 id="email"
+                                onChange={onInputChangeHandler}
                             />
                         </div>
                         <div className="field">
@@ -114,6 +173,7 @@ const CreatePoint = () => {
                                 type="text"
                                 name="whatsapp"
                                 id="whatsapp"
+                                onChange={onInputChangeHandler}
                             />
                         </div>
                     </div>
@@ -138,7 +198,7 @@ const CreatePoint = () => {
                         <Marker position={selectedPosition ? selectedPosition : initialPosition} />
                     </Map>
 
-                    <div class="field-group">
+                    <div className="field-group">
                         <div className="field">
                             <label htmlFor="uf">Estado (UF)</label>
 
@@ -183,7 +243,9 @@ const CreatePoint = () => {
                     <ul className="items-grid">
 
                         {items.map(item => (
-                            <li key={item.id}>
+                            <li
+                                className={selectedItems.includes(item.id) ? 'selected' : ''}
+                                key={item.id} onClick={() => onSelectItemsHandler(item.id)}>
                                 <img src={item.image_url} alt={item.title} />
                                 <span>{item.title}</span>
                             </li>
