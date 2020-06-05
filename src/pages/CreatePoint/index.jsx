@@ -16,6 +16,8 @@ import api from '../../services/api'
 import './styles.css'
 import logo from '../../assets/logo.svg'
 
+import Dropzone from '../../components/Dropzone'
+
 
 const CreatePoint = () => {
     const [items, setItems] = useState([])
@@ -31,6 +33,7 @@ const CreatePoint = () => {
         email: '',
         whatsapp: ''
     })
+    const [selectedFile, setSelectedFile] = useState()
 
     const history = useHistory()
 
@@ -108,25 +111,42 @@ const CreatePoint = () => {
 
     }
 
-   async function onSubmitHandler(event){
+    async function onSubmitHandler(event) {
         event.preventDefault()
+
+        console.log(selectedFile)
+
         console.log(event.target)
-        const {name, email,whatsapp, } = formData
+        const { name, email, whatsapp, } = formData
         const uf = selectedUf
         const city = selectedCity
         const [latitude, longitude] = selectedPosition
         const items = selectedItems
 
-        const data = {
-            name,
-            email,
-            whatsapp,
-            uf,
-            city,
-            latitude,
-            longitude,
-            items
+        const data = new FormData()
+
+        data.append('name', name)
+        data.append('email', email)
+        data.append('whatsapp', whatsapp)
+        data.append('uf', uf)
+        data.append('city', city)
+        data.append('latitude', latitude)
+        data.append('longitude', longitude)
+        data.append('items', items.join(','))
+
+        if (selectedFile) {
+            data.append('image', selectedFile)
         }
+        // const data = {
+        //     name,
+        //     email,
+        //     whatsapp,
+        //     uf,
+        //     city,
+        //     latitude,
+        //     longitude,
+        //     items
+        // }
 
         await api.post('points', data)
 
@@ -145,6 +165,8 @@ const CreatePoint = () => {
             </header>
             <form onSubmit={onSubmitHandler}>
                 <h1>Cadastro do ponto de coleta</h1>
+
+                <Dropzone onFileUploaded={setSelectedFile} />
 
                 <fieldset>
                     <legend><h2>Dados</h2></legend>
