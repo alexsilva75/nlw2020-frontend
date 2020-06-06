@@ -49,7 +49,7 @@ const CreatePoint = () => {
         api.get('items').then(response => {
             setItems(response.data)
         })
-    }, [items])
+    }, [])
 
     useEffect(() => {
         axios.get('https://servicodados.ibge.gov.br/api/v1/localidades/estados')
